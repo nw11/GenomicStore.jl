@@ -63,6 +63,7 @@ function write_track{T <: Number}(backend_store::JldStoreBackend,
     Lumberjack.info("Writing $seq_id")
     _write_track(fid, track_id, seq_id,values)
     Lumberjack.info("Finished writing $seq_id")
+    close(fid)
 end
 
 function delete_track!(backend_store::JldStoreBackend,track_id::String, seq_id::String)
@@ -71,18 +72,24 @@ function delete_track!(backend_store::JldStoreBackend,track_id::String, seq_id::
     Lumberjack.info("delete $seq_id")
     _delete_track!(fid, track_id, seq_id)
     Lumberjack.info("Finished removing $seq_id")
+    close(fid)
 end
 
-function read_track{T <: Number}(backend_store::JldStoreBackend,
+function read_track(backend_store::JldStoreBackend,
                                  track_id::String,  seq_id::String,
-                                 start_pos::String, stop_pos::String)
+                                 start_pos::Integer, stop_pos::Integer)
     genomic_store_path = backend_store.path
-    fid=h5open(genomic_store_path,"r")
-    if has(fid,"$seq_id/$id")
+    fid=nothing
+    try
+        fid=h5open(genomic_store_path,"r")
+    catch e
+        Lumberjack.error("$e\n Trying to open $genomic_store_path")
+    end
+    if has(fid,"$seq_id/$track_id")
         if start_pos == 0 && stop_pos == 0
-            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$id"))
+            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"))
         else
-            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$id"),(start_pos:stop_pos,))
+            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"),(start_pos:stop_pos,))
         end
         close(fid)
         return track_slice
@@ -100,6 +107,7 @@ function update_track!{T <: Number}(backend_store::JldStoreBackend,
     fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
     _udpate_track!(fid,track_id , seq_id , start_pos,stop_pos,values)
     Lumberjack.info("Finished updating $seq_id")
+    close(fid)
 end
 
 
