@@ -43,6 +43,50 @@ function get_chr_sizes_dict(chrom_sizes_path)
 end
 
 
+#=
+ memory_read_and_parse_point_file
+
+ Reads into memory a file and parses a file in the format:
+
+   chr1    3000826 +
+   chr1    3000827 -
+
+ returns tuple of 2 arrays
+ 1. seq_ids
+ 2. start positions
+=#
+function memory_read_and_parse_point_file(filename;strand_filter_char=nothing)
+    io = open(filename)
+    Lumberjack.info("reading all")
+    file=readall(io)
+    Lumberjack.info("finished reading all")
+    Lumberjack.info("split line")
+    lines=split(file,'\n')
+    Lumberjack.info("done split")
+
+    num_lines=length(lines)-1
+    seq_ids = ASCIIString[] #fill("",num_lines)
+    starts=   Int64[] #fill( 0, num_lines)
+    num_kept = 0
+    Lumberjack.info("parse and assign to array")
+    #parseint takes for ever, so annoying about this.
+    for idx=1:num_lines
+        (seq_id,start,strand)= split(strip(lines[idx]),'\t')
+        if strand == strand_filter_char
+            continue
+        end
+        push!(seq_ids,seq_id)
+        push!(starts,int64(start))
+        if idx % 1000000 == 0
+            println(idx)
+        end
+        num_kept+=1
+    end
+    Lumberjack.info("finished parsing integer and assigning to array ( number kept after filter if applied $num_kept). first seq_id is $(seq_ids[1]). Last seq_id $(seq_ids[end])")
+    return (seq_ids,starts)
+end
+
+
 
 #=
  memory_read_and_parse_methpipe_cg_bed_coverage
@@ -146,6 +190,68 @@ function memory_read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
     return (seq_ids,starts,stops,scores)
 end
 
+
+
+#=
+ memory_read_and_parse_interval_file
+
+ This function expects a file to have the first three columns to contain
+ a sequence id, start position, and stop/end position
+
+ Initially used to parse files like below:
+
+ chr1    3670331 3672761 HYPO0   184     +
+ chr1    3993551 3993737 HYPO1   5       +
+
+ Returns a tuple of vectors
+
+ 1. sequence_ids
+ 2. start_positions
+ 3. stop_positions
+
+=#
+function memory_read_and_parse_interval_file(filename; only_start=false,strand_filter_char=nothing)
+    io = open(filename)
+    Lumberjack.info("reading all")
+    file=readall(io)
+    Lumberjack.info("finished reading all")
+    Lumberjack.info("split line")
+    lines=split(file,'\n')
+    Lumberjack.info("done split")
+
+    num_lines=length(lines)-1 # lines -1 as it splits the final row
+    seq_ids = fill("",num_lines)
+
+    starts=fill( 0, num_lines)
+    if !only_start
+       stops=fill( 0,  num_lines )
+    end
+    Lumberjack.info("parse and assign to array")
+    #parseint takes for ever,so annoying about this.
+    for idx=1:num_lines
+        if only_start
+            (seq_id,start)= split(lines[idx],'\t')
+        else
+            (seq_id,start,stop)= split(lines[idx],'\t')
+        end
+        seq_ids[idx]=seq_id
+        starts[idx]=int64(start)
+        if !only_start
+            stops[idx]=int64(stop)
+        end
+
+        if idx % 1000000 == 0
+            println(idx)
+        end
+    end
+    Lumberjack.info("finished parsing integer and assigning to array")
+    if only_start
+        return (seq_ids,starts)
+    end
+    return  (seq_ids,starts,stops)
+end
+
+
 #=
 
 save_bed_track
@@ -245,13 +351,138 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
 end
 
 
-
-
 function isgzip(filepath)
     (path,ext) = splitext(filepath)
     gzip = (ext==".gz" || ext==".gzip" ) ? true : false
     return gzip
 end
+
+
+#=
+ save_point_start_track
+
+ This function saves a "bed" like file containing just a start position and strand to hdf5 storage.
+ The tab delimited format describing CpG positions looks like this:
+ chr1    3000826 +
+ chr1    3000827 -
+
+=#
+
+function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes_path;start_coord_shift=0,strand_filter_char=nothing)
+    chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
+    #--- sort in temporary dir
+    #--- load
+    (seq_ids,starts)=memory_read_and_parse_point_file(point_file, strand_filter_char=strand_filter_char)
+    bedgraph_file_length = length(seq_ids)
+    Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
+
+    db=getdb(genomic_store_path)
+    seq_id="FIRSTROW"
+    # if seq_ids[1] == "FIRSTROW"
+    #   seq_id="FIRSTROW1"
+    # end
+    seq_vals=nothing
+    for i=1:bedgraph_file_length
+        if seq_id != seq_ids[i]
+            if i != 1
+                write_track(db,track_id,seq_id,seq_vals)
+            end
+            seq_id   = seq_ids[i]
+            Lumberjack.info("Next sequence name: $seq_id")
+
+            # -- check the id is valid --
+            if !haskey(chr_sizes_dict,seq_id)
+                Lumberjack.error("Invalid ID: ( $seq_id ), this file only saved up to line $(i-1)")
+            end
+
+            # -- check we have sorted data by chr
+            seq_len  = chr_sizes_dict[seq_id]
+            seq_vals = fill(int8(0),seq_len)
+            Lumberjack.info("Next track to be $seq_len in length")
+        end
+        #---TODO will slow things down a little but check that the id is sorted baring in mind a chr change.
+        seq_vals[ starts[i] + start_coord_shift ] = 1
+    end
+    # write the final track
+    write_track(db,track_id,seq_id,seq_vals)
+    #close(fid)
+end
+
+
+#=
+
+ save_interval_track
+
+# this assumes each interval needs to be recorded
+# as existing or not existing - use 1 or 0
+# this function just records the start position at the moment.
+# interval_label_type may be either "binary" uses 1 or 0 to indicate an interval covers a basepair
+# or multiclass_int8 which allows an 256 possible integer values (-128 .. 127)
+
+=#
+function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes_path;
+                             start_coord_shift=0,strand_filter_char=nothing, interval_label_type="binary")
+
+    chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
+    #--- sort in temporary dir
+    #--- load
+    if interval_label_type == "binary"
+        (seq_ids,starts,stops)=memory_read_and_parse_interval_file(interval_file, strand_filter_char=strand_filter_char)
+    elseif interval_label_type == "multiclass_int8"
+        (seq_ids,starts,stops,scores)=memory_read_and_integer_parse_bedgraph(interval_file)
+    else
+        Lumberjack.error("Interval Label Type not supported")
+    end
+
+    bedgraph_file_length = length(seq_ids)
+    Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
+
+    db=getdb(genomic_store_path)
+
+    seq_id="FIRSTROW"
+    #if seq_ids[1] == "FIRSTROW"
+    #   seq_id="FIRSTROW1"
+    #end
+    seq_vals=nothing
+    for i=1:bedgraph_file_length
+        if seq_id != seq_ids[i]
+            if i != 1
+                write_track(db,track_id,seq_id,seq_vals)
+            end
+            seq_id   = seq_ids[i]
+            Lumberjack.info("Next sequence name: $seq_id")
+
+            # -- check the id is valid --
+            if !haskey(chr_sizes_dict,seq_id)
+                Lumberjack.error("Invalid ID: ( $seq_id ), this file only saved up to line $(i-1)")
+            end
+
+            # -- check we have sorted data by chr
+            seq_len  = chr_sizes_dict[seq_id]
+            seq_vals = fill(int8(0),seq_len)
+            Lumberjack.info("Next track to be $seq_len in length")
+        end
+        #---TODO will slow things down a little but check that the id is sorted baring in mind a chr change.
+        starting_pos=starts[i] + start_coord_shift
+        stopping_pos=stops[i]  + start_coord_shift
+        if interval_label_type == "binary"
+            score=1
+        elseif interval_label_type == "multiclass_int8"
+            score = scores[i]
+        end
+        for pos=starting_pos:stopping_pos
+            seq_vals[ pos ] = score
+        end
+    end
+    # write the final track
+    write_track(db,track_id,seq_id,seq_vals)
+    #close(fid)
+end
+
+
+
+
+
 
 
 #=
@@ -279,7 +510,7 @@ function store_methpipe_bed_points(filepath::ASCIIString,
         na_val=int32(na_val)
     end
 
-    save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path;
+    save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path,
                                 start_coord_shift=coord_shift, OUT_OF_RANGE_VAL=na_val, gzip=gzip,
                                 val_type=val_type,
                                 bedtype=bedtype
@@ -287,12 +518,22 @@ function store_methpipe_bed_points(filepath::ASCIIString,
 end
 
 
+#=
+ store_cpg_points
+
+  default is to filter out lines on negative strand
+
+=#
 function store_cpg_points(filepath::ASCIIString,
                                    genomic_store_path::ASCIIString,
                                    track_id::ASCIIString,
-                                   chr_sizes_path::ASCIIString;
-                                   na_val=0,
+                                   chr_sizes_path::ASCIIString,
+                                   strand_filter_char="-",
                                    coord_shift=0)
+
+  save_start_point_track(genomic_store_path, filepath,track_id, chr_sizes_path,
+                         start_coord_shift=coord_shift
+                         )
 
 end
 
@@ -302,9 +543,11 @@ end
 function store_methpipe_bed_intervals(filepath::ASCIIString,
                                    genomic_store_path::ASCIIString,
                                    track_id::ASCIIString,
-                                   chr_sizes_path::ASCIIString;
-                                   na_val=0,
+                                   chr_sizes_path::ASCIIString,
                                    coord_shift=0)
+
+   save_interval_track(genomic_store_path,filepath,track_id,chr_sizes_path,
+                       start_coord_shift=0, interval_label_type="binary")
 
 end
 

@@ -106,7 +106,7 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
         track_id     = track_df[row, :track_id]
         file_type    = track_df[row, :filetype]
         storage_type = track_df[row, :storagetype]
-        file_path    = track_df[row, :filename]
+        filepath    = track_df[row, :filename]
         if any(x->x == :coordshift,names(track_df))
             coord_shift  = track_df[row, :coordshift]
         else
@@ -131,22 +131,35 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
         Lumberjack.info("==Saving track $track_id to database==")
 
         if file_type == "methpipe_bed_levels"
-            store_methpipe_bed_points(filepath::ASCIIString,
-                                      genomic_store_path::ASCIIString,
-                                      track_id::ASCIIString,
-                                      na_val::Number,
-                                      coord_shift=0,
+            store_methpipe_bed_points(filepath,
+                                      genomic_store_path,
+                                      track_id ,
+                                      chr_sizes_path,
+                                      na_val=na_val,
+                                      coord_shift=coord_shift,
                                       measurement="levels")
         elseif file_type == "methpipe_bed_coverage"
-            store_methpipe_bed_points(filepath::ASCIIString,
-                                      genomic_store_path::ASCIIString,
-                                      track_id::ASCIIString,
-                                      na_val::Number,
-                                      coord_shift=0,
+            store_methpipe_bed_points(filepath ,
+                                      genomic_store_path ,
+                                      track_id ,
+                                      na_val=na_val,
+                                      coord_shift==coord_shift,
                                       measurement="coverage")
         elseif file_type == "cpg_point"
-            Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
+           # Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
+            store_cpg_points(filepath ,
+                                   genomic_store_path ,
+                                   track_id ,
+                                   chr_sizes_path,
+                                   strand_filter_char="-"
+                                   coord_shift= coord_shift)
         elseif file_type == "methpipe_bed_intervals"
+           store_methpipe_bed_intervals(filepath ,
+                                   genomic_store_path ,
+                                   track_id ,
+                                   chr_sizes_path,
+                                   coord_shift= coord_shift)
+
             Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
         else
             Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
