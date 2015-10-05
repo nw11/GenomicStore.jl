@@ -72,6 +72,7 @@ using Compat
 using HDF5,JLD
 using GZip
 using Lumberjack
+using DataFrames
 include("store-backend1.jl")
 
 function read_sample_info(sample_info_path)
@@ -82,7 +83,7 @@ function read_sample_info(sample_info_path)
         sample_info_df = readtable(sample_info_path, allowcomments=true)
         colnames=names(sample_info_df)
         Lumberjack.info("Column names in sample info: $colnames")
-        required_colnames = [:filename,:filetype,:storagetype,:track_id]
+        required_colnames = [:filename,:filetype,:track_id]
         for required_colname in required_colnames
             colname_appears = any(x->x==required_colname,colnames)
             if !colname_appears
@@ -92,8 +93,8 @@ function read_sample_info(sample_info_path)
             end
         end
         return sample_info_df
-    catch
-        Lumberjack.error("Error reading table: Check file exists and format correct.")
+    catch e
+        Lumberjack.error("$e\nError reading table: Check file exists and format correct.")
     end
 end
 
@@ -105,7 +106,7 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
     for row=1:nrow(track_df)
         track_id     = track_df[row, :track_id]
         file_type    = track_df[row, :filetype]
-        storage_type = track_df[row, :storagetype]
+        #storage_type = track_df[row, :storagetype]
         filepath    = track_df[row, :filename]
         if any(x->x == :coordshift,names(track_df))
             coord_shift  = track_df[row, :coordshift]
@@ -124,8 +125,8 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
             strand_filter = nothing
         end
 
-        if !isabspath( file_path )
-            file_path = abspath(file_path)
+        if !isabspath( filepath )
+            file_path = abspath(filepath)
         end
 
         Lumberjack.info("==Saving track $track_id to database==")
@@ -142,8 +143,9 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
             store_methpipe_bed_points(filepath ,
                                       genomic_store_path ,
                                       track_id ,
+                                      chr_sizes_path,
                                       na_val=na_val,
-                                      coord_shift==coord_shift,
+                                      coord_shift=coord_shift,
                                       measurement="coverage")
         elseif file_type == "cpg_point"
            # Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
@@ -151,16 +153,14 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
                                    genomic_store_path ,
                                    track_id ,
                                    chr_sizes_path,
-                                   strand_filter_char="-"
+                                   strand_filter_char="-",
                                    coord_shift= coord_shift)
-        elseif file_type == "methpipe_bed_intervals"
+        elseif file_type == "methpipe_bed_interval"
            store_methpipe_bed_intervals(filepath ,
                                    genomic_store_path ,
                                    track_id ,
                                    chr_sizes_path,
                                    coord_shift= coord_shift)
-
-            Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
         else
             Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
         end

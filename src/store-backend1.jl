@@ -1,4 +1,4 @@
-# This file provides functions for reading files into and hdf5a db
+  # This file provides functions for reading files into and hdf5a db
 using Compat
 using GZip
 using Lumberjack
@@ -490,10 +490,10 @@ end
    exported method
 =#
 
-function store_methpipe_bed_points(filepath::ASCIIString,
-                                   genomic_store_path::ASCIIString,
-                                   track_id::ASCIIString,
-                                   chr_sizes_path::ASCIIString;
+function store_methpipe_bed_points(filepath::String,
+                                   genomic_store_path::String,
+                                   track_id::String,
+                                   chr_sizes_path::String;
                                    na_val=0,
                                    coord_shift=0,
                                    measurement="levels")
@@ -524,10 +524,10 @@ end
   default is to filter out lines on negative strand
 
 =#
-function store_cpg_points(filepath::ASCIIString,
-                                   genomic_store_path::ASCIIString,
-                                   track_id::ASCIIString,
-                                   chr_sizes_path::ASCIIString,
+function store_cpg_points(filepath::String,
+                                   genomic_store_path::String,
+                                   track_id::String,
+                                   chr_sizes_path::String;
                                    strand_filter_char="-",
                                    coord_shift=0)
 
@@ -540,10 +540,10 @@ end
 #=
  store_methpipe_bed_intervals
 =#
-function store_methpipe_bed_intervals(filepath::ASCIIString,
-                                   genomic_store_path::ASCIIString,
-                                   track_id::ASCIIString,
-                                   chr_sizes_path::ASCIIString,
+function store_methpipe_bed_intervals(filepath::String,
+                                   genomic_store_path::String,
+                                   track_id::String,
+                                   chr_sizes_path::String;
                                    coord_shift=0)
 
    save_interval_track(genomic_store_path,filepath,track_id,chr_sizes_path,
