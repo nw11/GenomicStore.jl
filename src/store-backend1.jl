@@ -290,40 +290,61 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
 
     db=getdb(genomic_store_path) # from crud.jl
 
-    seq_id="FIRSTROW"
-    #if seq_ids[1] == "FIRSTROW"
-    #   seq_id="FIRSTROW1"
-    #end
-    seq_vals=nothing
-    #seen_seq_id = Dict()
-    #curr_seq_id=""
+
+    # initialise for the first sequence_id
+    seq_id=seq_ids[1]
+    seq_len  = chr_sizes_dict[seq_id]
+    seq_vals = fill(OUT_OF_RANGE_VAL,seq_len)
+
+    # initialise strucutres for checking sorted data
+    seen_seq_ids = Set()
+    last_start_pos = 0
+
     for i=1:bedgraph_file_length
+        # if there is a change in sequence_id
         if seq_id != seq_ids[i]
+
+            if( in(seq_id,seen_seq_ids ) )
+                Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
+            end
+
             if i != 1
                 write_track(fid,seq_id,track_id,seq_vals)
             end
+
+            # -- indicate we have processed the current seq_id
+            push!(seen_seq_ids,se)
+
+            # -- reset last start position
+            last_start_pos=0
+
+            # -- update seq_id
             seq_id   = seq_ids[i]
             Lumberjack.info("Next sequence name: $seq_id")
 
             # -- check the id is valid --
-
             if !haskey(chr_sizes_dict,seq_id)
                 Lumberjack.error("Invalid ID: ( $seq_id ), this file only saved up to line $(i-1)")
             end
-
-            # -- TO DO check we have sorted data by chr
-            #if curr_seq_id != seq_id
-            #    seen_seq_id[curr_seq_id]="DONE"
-            #    curr_seq_id = seq_id
-            #    seen_seq_id[curr_seq_id]="DOING"
-            #end
 
             seq_len  = chr_sizes_dict[seq_id]
             seq_vals = fill(OUT_OF_RANGE_VAL,seq_len)
             Lumberjack.info("Next track to be $seq_len in length")
         end
 
-        #--- will slow things down a little but check that the id is sorted, bare in mind a chr change.
+
+        #--- check that the start positions are sorted
+        if last_start_pos > starts[i]
+            Lumberjack.error("Unsorted position found at $i ($last_start_pos > $(starts[i])")
+        end
+        # update last_start_pos
+        last_start_pos = starts[i]
+
+        #--- check that the stop position is not less than the start position
+        if starts[i] > stops[i]
+            Lumberjack.error("Start position greater than stop position line $i $(starts[i]) > $(stops[i])")
+        end
+
         if val_type == "float32"
             try
                 seq_vals[ starts[i] + start_coord_shift ] = float32( scores[i] )
@@ -377,16 +398,34 @@ function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes
     Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
 
     db=getdb(genomic_store_path)
-    seq_id="FIRSTROW"
-    # if seq_ids[1] == "FIRSTROW"
-    #   seq_id="FIRSTROW1"
-    # end
-    seq_vals=nothing
+
+    # initialise for the first sequence_id
+    seq_id=seq_ids[1]
+    seq_len  = chr_sizes_dict[seq_id]
+    seq_vals = fill(int8(0),seq_len)
+
+    # initialise structures for checking sorted data
+    seen_seq_ids = Set()
+    last_start_pos = 0
+
     for i=1:bedgraph_file_length
         if seq_id != seq_ids[i]
+
+            if( in(seq_id,seen_seq_ids ) )
+                Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
+            end
+
             if i != 1
                 write_track(db,track_id,seq_id,seq_vals)
             end
+
+            # -- indicate we have processed the current seq_id
+            push!(seen_seq_ids,seq_id)
+
+            # -- reset last start position
+            last_start_pos=0
+
+            # -- update seq_id
             seq_id   = seq_ids[i]
             Lumberjack.info("Next sequence name: $seq_id")
 
@@ -400,12 +439,18 @@ function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes
             seq_vals = fill(int8(0),seq_len)
             Lumberjack.info("Next track to be $seq_len in length")
         end
-        #---TODO will slow things down a little but check that the id is sorted baring in mind a chr change.
+
+        #--- check that the start positions are sorted
+        if last_start_pos > starts[i]
+            Lumberjack.error("Unsorted position found at $i ($last_start_pos > $(starts[i])")
+        end
+        # update last_start_pos
+        last_start_pos = starts[i]
+
         seq_vals[ starts[i] + start_coord_shift ] = 1
     end
     # write the final track
     write_track(db,track_id,seq_id,seq_vals)
-    #close(fid)
 end
 
 
@@ -439,16 +484,32 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
 
     db=getdb(genomic_store_path)
 
-    seq_id="FIRSTROW"
-    #if seq_ids[1] == "FIRSTROW"
-    #   seq_id="FIRSTROW1"
-    #end
-    seq_vals=nothing
+    # initialise for the first sequence_id
+    seq_id=seq_ids[1]
+    seq_len  = chr_sizes_dict[seq_id]
+    seq_vals = fill(int8(0),seq_len)
+
+    # initialise structures for checking sorted data
+    seen_seq_ids = Set()
+    last_start_pos = 0
+
     for i=1:bedgraph_file_length
         if seq_id != seq_ids[i]
+
+            if( in(seq_id,seen_seq_ids ) )
+                Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
+            end
+
             if i != 1
                 write_track(db,track_id,seq_id,seq_vals)
             end
+            # -- indicate we have processed the current seq_id
+            push!(seen_seq_ids,seq_id)
+
+            # -- reset last start position
+            last_start_pos=0
+
+            # -- update seq_id
             seq_id   = seq_ids[i]
             Lumberjack.info("Next sequence name: $seq_id")
 
@@ -462,7 +523,19 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
             seq_vals = fill(int8(0),seq_len)
             Lumberjack.info("Next track to be $seq_len in length")
         end
-        #---TODO will slow things down a little but check that the id is sorted baring in mind a chr change.
+
+        #--- check that the start positions are sorted
+        if last_start_pos > starts[i]
+            Lumberjack.error("Unsorted position found at $i ($last_start_pos > $(starts[i])")
+        end
+        # update last_start_pos
+        last_start_pos = starts[i]
+
+        #--- check that the stop position is not less than the start position
+        if starts[i] > stops[i]
+            Lumberjack.error("Start position greater than stop position line $i $(starts[i]) > $(stops[i])")
+        end
+
         starting_pos=starts[i] + start_coord_shift
         stopping_pos=stops[i]  + start_coord_shift
         if interval_label_type == "binary"
@@ -478,12 +551,6 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
     write_track(db,track_id,seq_id,seq_vals)
     #close(fid)
 end
-
-
-
-
-
-
 
 #=
  store_methpipe_bed_points
