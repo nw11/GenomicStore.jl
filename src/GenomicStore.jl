@@ -14,4 +14,7 @@ include(Pkg.dir( "GenomicStore","src","genomic-store.jl"))
 export getdb
 export delete_track!
 include(Pkg.dir( "GenomicStore","src","crud.jl"))
+
+store_samples
+include(Pkg.dir("GenomicStore","src","store.jl"))
 end # module
