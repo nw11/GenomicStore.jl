@@ -42,6 +42,12 @@ function get_chr_sizes_dict(chrom_sizes_path)
     return chrom_sizes_dict
 end
 
+function isgzip(filepath)
+    (path,ext) = splitext(filepath)
+    gzip = (ext==".gz" || ext==".gzip" ) ? true : false
+    return gzip
+end
+
 
 #=
  memory_read_and_parse_point_file
@@ -175,7 +181,7 @@ function memory_read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
     stops=fill( 0,  num_lines )
     scores=fill(float32(0.0), num_lines )
     Lumberjack.info("parse and assign to array")
-    #parseint takes for ever, and that is what is so annoying about this.
+
     for idx=1:num_lines
         (seq_id,start,strand,context,score,coverage)= split(lines[idx],'\t')
         seq_ids[idx] = seq_id
@@ -227,7 +233,7 @@ function memory_read_and_parse_interval_file(filename; only_start=false,strand_f
        stops=fill( 0,  num_lines )
     end
     Lumberjack.info("parse and assign to array")
-    #parseint takes for ever,so annoying about this.
+
     for idx=1:num_lines
         if only_start
             (seq_id,start)= split(lines[idx],'\t')
@@ -308,9 +314,7 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
                 Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
             end
 
-            if i != 1
-                write_track(fid,seq_id,track_id,seq_vals)
-            end
+            write_track(fid,seq_id,track_id,seq_vals)
 
             # -- indicate we have processed the current seq_id
             push!(seen_seq_ids,se)
@@ -372,13 +376,6 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
 end
 
 
-function isgzip(filepath)
-    (path,ext) = splitext(filepath)
-    gzip = (ext==".gz" || ext==".gzip" ) ? true : false
-    return gzip
-end
-
-
 #=
  save_point_start_track
 
@@ -415,9 +412,7 @@ function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes
                 Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
             end
 
-            if i != 1
-                write_track(db,track_id,seq_id,seq_vals)
-            end
+            write_track(db,track_id,seq_id,seq_vals)
 
             # -- indicate we have processed the current seq_id
             push!(seen_seq_ids,seq_id)
@@ -500,9 +495,8 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
                 Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
             end
 
-            if i != 1
-                write_track(db,track_id,seq_id,seq_vals)
-            end
+            write_track(db,track_id,seq_id,seq_vals)
+
             # -- indicate we have processed the current seq_id
             push!(seen_seq_ids,seq_id)
 
@@ -549,7 +543,6 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
     end
     # write the final track
     write_track(db,track_id,seq_id,seq_vals)
-    #close(fid)
 end
 
 #=
