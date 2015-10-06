@@ -271,6 +271,8 @@ save_bed_track
  b) methpipe_cpg_bed
      i) extracting the methylation levels value
      ii) extracting the coverage levels
+
+ Current requirement that input file is pre-sorted
 =#
 
 function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
@@ -384,12 +386,13 @@ end
  chr1    3000826 +
  chr1    3000827 -
 
+ Current requirement that input file is pre-sorted
+
 =#
 
 function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes_path;start_coord_shift=0,strand_filter_char=nothing)
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
-    #--- sort in temporary dir
-    #--- load
+
     (seq_ids,starts)=memory_read_and_parse_point_file(point_file, strand_filter_char=strand_filter_char)
     bedgraph_file_length = length(seq_ids)
     Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
@@ -459,13 +462,13 @@ end
 # interval_label_type may be either "binary" uses 1 or 0 to indicate an interval covers a basepair
 # or multiclass_int8 which allows an 256 possible integer values (-128 .. 127)
 
+ Current requirement that input file is pre-sorted
 =#
 function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes_path;
                              start_coord_shift=0,strand_filter_char=nothing, interval_label_type="binary")
 
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
-    #--- sort in temporary dir
-    #--- load
+
     if interval_label_type == "binary"
         (seq_ids,starts,stops)=memory_read_and_parse_interval_file(interval_file, strand_filter_char=strand_filter_char)
     elseif interval_label_type == "multiclass_int8"
@@ -545,6 +548,10 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
     write_track(db,track_id,seq_id,seq_vals)
 end
 
+
+
+# -- Exposed methods
+
 #=
  store_methpipe_bed_points
    exported method
@@ -580,9 +587,7 @@ end
 
 #=
  store_cpg_points
-
   default is to filter out lines on negative strand
-
 =#
 function store_cpg_points(filepath::String,
                                    genomic_store_path::String,

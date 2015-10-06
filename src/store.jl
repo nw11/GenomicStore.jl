@@ -99,14 +99,11 @@ function read_sample_info(sample_info_path)
 end
 
 function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
-    # check for columns
-    # store track with track id and type
-    # GenomeStore(genome_store_path,sample_info_path, track_ids, AND OTHER THINGS)
+
     track_df=read_sample_info(sample_info_path)
     for row=1:nrow(track_df)
         track_id     = track_df[row, :track_id]
         file_type    = track_df[row, :filetype]
-        #storage_type = track_df[row, :storagetype]
         filepath    = track_df[row, :filename]
         if any(x->x == :coordshift,names(track_df))
             coord_shift  = track_df[row, :coordshift]
@@ -148,7 +145,6 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
                                       coord_shift=coord_shift,
                                       measurement="coverage")
         elseif file_type == "cpg_point"
-           # Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
             store_cpg_points(filepath ,
                                    genomic_store_path ,
                                    track_id ,
