@@ -1,6 +1,5 @@
 module GenomicStore
 
-# package code goes here]
 export get_track_interval
 export get_chr_sizes_dict
 export save_point_start_track
@@ -15,6 +14,6 @@ export getdb
 export delete_track!
 include("crud.jl")
 
-store_samples
+export store_samples
 include("store.jl")
 end # module
