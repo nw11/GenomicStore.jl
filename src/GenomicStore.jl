@@ -9,12 +9,12 @@ export save_bedgraph_track
 export save_bed_track
 export store_info_str
 export store_info_dict
-include(Pkg.dir( "GenomicStore","src","genomic-store.jl"))
+include("genomic-store.jl")
 
 export getdb
 export delete_track!
-include(Pkg.dir( "GenomicStore","src","crud.jl"))
+include("crud.jl")
 
 store_samples
-include(Pkg.dir("GenomicStore","src","store.jl"))
+include("store.jl")
 end # module
