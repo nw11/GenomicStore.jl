@@ -157,6 +157,12 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
                                    track_id ,
                                    chr_sizes_path,
                                    coord_shift= coord_shift)
+        elseif file_type == "bedgraph_cpg"
+            store_bedgraph_cpg(filepath ,
+                                   genomic_store_path ,
+                                   track_id ,
+                                   chr_sizes_path,
+                                   coord_shift= coord_shift)
         else
             Lumberjack.info("Skip track - $track_id because filetype or storagetype not yet supported")
         end
