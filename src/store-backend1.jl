@@ -260,6 +260,65 @@ end
 
 #=
 
+  memory_read_and_integer_parse_bedgraph
+
+  This function expects to have the first three columns to contain
+  seq id,start position, and stop/end postion.
+
+  e.g.
+
+  chr1 3670331 3670333 0.05
+
+  Returns a tuple of vectors
+
+  1. sequence_ids
+  2. start_positions
+  3. stop_positions
+  4. score
+
+=#
+
+function memory_read_and_integer_parse_bedgraph(filename;gzip=false)
+    if gzip
+        lines=read_gzip_file(filename)
+    else
+        lines = memory_read_file(filename)
+    end
+    #io = open(filename)
+    #Lumberjack.info("reading all")
+    #file=readall(io)
+    #Lumberjack.info("finished reading all")
+    #Lumberjack.info("split line")
+    #lines=split(file,'\n')
+    #Lumberjack.info("done split")
+    # now we know what size thigns should be
+    # get size and two columns and then
+    # lines -1 as it splits the final row
+    num_lines=length(lines)-1
+    seq_ids = fill("",num_lines)
+    starts=fill( 0, num_lines)
+    stops=fill( 0,  num_lines )
+    scores=fill(float32(0.0), num_lines )
+    Lumberjack.info("parse and assign to array")
+    #parseint takes for ever, and that is what is so annoying about this.
+    for idx=1:num_lines
+        (seq_id,start,stop,score)= split(lines[idx],'\t')
+        seq_ids[idx] = seq_id
+        starts[idx]  = int64(start)
+        stops[idx]   = int64(stop)
+        scores[idx]  = float32(score)
+        if idx % 1000000 == 0
+            println(idx)
+        end
+    end
+    Lumberjack.info("finished parsing integer and assigning to array")
+    return (seq_ids,starts,stops,scores)
+end
+
+
+
+#=
+
 save_bed_track
 
  This function saves "bed" like files to hdf5 storage. The name should more accurately
@@ -284,7 +343,7 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
     #--- sort in temporary dir
     #--- load
-    if bedtype == "bedgraph"
+    if bedtype == "bedgraph_cpg"
         (seq_ids,starts,stops,scores)=memory_read_and_parse_bedgraph(input_file,gzip=gzip)
     elseif bedtype == "methpipe_cpg_bed_levels"
         (seq_ids,starts,stops,scores)=memory_read_and_parse_methpipe_cg_bed_levels(input_file,gzip=gzip)
@@ -616,4 +675,23 @@ function store_methpipe_bed_intervals(filepath::String,
 
 end
 
+#=
+ store_bedgraph
+=#
 
+function store_bedgraph_cpg( filepath::String,
+                         genomic_store_path::String,
+                         track_id::String,
+                         chr_sizes_path::String;
+                         na_val=0,
+                         coord_shift=0,
+                         measurement="levels")
+
+    gzip = isgzip(filepath) ? true : false
+    val_type = "float32"
+    na_val=int32(na_val)
+    save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path,
+                   start_coord_shift=coord_shift, OUT_OF_RANGE_VAL=na_val,
+                   gzip=gzip, val_type=val_type, bedtype="bedgraph" )
+
+end
