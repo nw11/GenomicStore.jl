@@ -692,6 +692,6 @@ function store_bedgraph_cpg( filepath::String,
     na_val=int32(na_val)
     save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path,
                    start_coord_shift=coord_shift, OUT_OF_RANGE_VAL=na_val,
-                   gzip=gzip, val_type=val_type, bedtype="bedgraph" )
+                   gzip=gzip, val_type=val_type, bedtype="bedgraph_cpg" )
 
 end
