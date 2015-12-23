@@ -118,9 +118,7 @@ end
 
 # -
 # - This file has first three columns chr start stop
-#-  it could have others
-# - but we ignore them.
-# -
+# -  it could have others but we ignore them.
 function memory_read_and_integer_parse_interval_file(filename; only_start=false,strand_filter_char=nothing)
     io = open(filename)
     Lumberjack.info("reading all")

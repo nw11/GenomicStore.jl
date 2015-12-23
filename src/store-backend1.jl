@@ -307,11 +307,11 @@ function memory_read_and_parse_bedgraph(filename;gzip=false)
         starts[idx]  = int64(start)
         stops[idx]   = int64(stop)
         scores[idx]  = float32(score)
-        if idx % 1000000 == 0
+        if idx % 1000 == 0
             println(idx)
         end
     end
-    Lumberjack.info("finished parsing integer and assigning to array")
+    Lumberjack.info("finished parsing and assigning to array")
     return (seq_ids,starts,stops,scores)
 end
 
