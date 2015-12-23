@@ -357,7 +357,6 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
 
     db=getdb(genomic_store_path) # from crud.jl
 
-
     # initialise for the first sequence_id
     seq_id=seq_ids[1]
     seq_len  = chr_sizes_dict[seq_id]
@@ -366,19 +365,19 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
     # initialise strucutres for checking sorted data
     seen_seq_ids = Set()
     last_start_pos = 0
-
+    println("sequence id: $seq_id")
     for i=1:bedgraph_file_length
         # if there is a change in sequence_id
         if seq_id != seq_ids[i]
-
+            println("change: $seq_id, $(seq_ids[i])")
             if( in(seq_id,seen_seq_ids ) )
                 Lumberjack.error("Unordered sequence identifier found at $i ($seq_id)")
             end
 
-            write_track(fid,seq_id,track_id,seq_vals)
+            write_track(db,track_id,seq_id,seq_vals)
 
             # -- indicate we have processed the current seq_id
-            push!(seen_seq_ids,se)
+            push!(seen_seq_ids,seq_id)
 
             # -- reset last start position
             last_start_pos=0
@@ -418,7 +417,7 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
                 curr_row = join([ seq_ids[i], starts[i],stops[i], scores[i] ],"\t" )
                 println(curr_row)
                 println("shift: $start_coord_shift")
-                error(y)
+                Lumberjack.error(y)
             end
         end
         if val_type == "int32"
@@ -689,7 +688,7 @@ function store_bedgraph_cpg( filepath::String,
 
     gzip = isgzip(filepath) ? true : false
     val_type = "float32"
-    na_val=int32(na_val)
+    na_val=float32(na_val)
     save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path,
                    start_coord_shift=coord_shift, OUT_OF_RANGE_VAL=na_val,
                    gzip=gzip, val_type=val_type, bedtype="bedgraph_cpg" )
