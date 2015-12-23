@@ -318,9 +318,9 @@ end
 
 function read_and_parse_bedgraph(filename;gzip=false)
     if gzip
-        stream=ZlibInflateInputStream(open(file),reset_on_end=true)
+        stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
     else
-        stream= open(file)
+        stream= open(filename)
     end
     seq_ids=UTF8String[]
     starts=Int64[]
