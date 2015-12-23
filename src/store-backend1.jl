@@ -1,6 +1,7 @@
   # This file provides functions for reading files into and hdf5a db
 using Compat
 using GZip
+using Libz
 using Lumberjack
 using HDF5,JLD
 include( Pkg.dir("GenomicStore","src","crud.jl") )
@@ -315,7 +316,31 @@ function memory_read_and_parse_bedgraph(filename;gzip=false)
     return (seq_ids,starts,stops,scores)
 end
 
-
+function read_and_parse_bedgraph(filename;gzip=false)
+    if gzip
+        stream=ZlibInflateInputStream(open(file),reset_on_end=true)
+    else
+        stream= open(file)
+    end
+    seq_ids=UTF8String[]
+    starts=Int64[]
+    stops=Int64[]
+    scores=Float32[]
+    count=0
+    for line in eachline(stream)
+           (seq_id,start,stop,score)=split(line,'\t')
+           push!(starts,parse(Int64,start) )
+           push!(scores,parse(Float32,score))
+           push!(stops,parse(Int64,stop))
+           push!(seq_ids,seq_id)
+           count+=1
+           if count % 1000000 == 0
+             Lumberjack.info("Read $count")
+           end
+       end
+    Lumberjack.info("finished parsing and assigning to array")
+    return (seq_ids,starts,stops,scores)
+end
 
 #=
 
@@ -344,7 +369,7 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
     #--- sort in temporary dir
     #--- load
     if bedtype == "bedgraph_cpg"
-        (seq_ids,starts,stops,scores)=memory_read_and_parse_bedgraph(input_file,gzip=gzip)
+        (seq_ids,starts,stops,scores)=read_and_parse_bedgraph(input_file,gzip=gzip)
     elseif bedtype == "methpipe_cpg_bed_levels"
         (seq_ids,starts,stops,scores)=memory_read_and_parse_methpipe_cg_bed_levels(input_file,gzip=gzip)
     elseif bedtype == "methpipe_cpg_bed_coverage"
