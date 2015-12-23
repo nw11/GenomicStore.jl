@@ -260,7 +260,7 @@ end
 
 #=
 
-  memory_read_and_integer_parse_bedgraph
+  memory_read_and_parse_bedgraph
 
   This function expects to have the first three columns to contain
   seq id,start position, and stop/end postion.
@@ -278,7 +278,7 @@ end
 
 =#
 
-function memory_read_and_integer_parse_bedgraph(filename;gzip=false)
+function memory_read_and_parse_bedgraph(filename;gzip=false)
     if gzip
         lines=read_gzip_file(filename)
     else
