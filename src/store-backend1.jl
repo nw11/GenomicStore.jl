@@ -3,6 +3,7 @@ using Compat
 using GZip
 using Libz
 using Lumberjack
+using Docile
 using HDF5,JLD
 include( Pkg.dir("GenomicStore","src","crud.jl") )
 
@@ -169,7 +170,6 @@ end
 
 =#
 
-
 function memory_read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
     if gzip
         lines=read_gzip_file(filename)
@@ -258,10 +258,8 @@ function memory_read_and_parse_interval_file(filename; only_start=false,strand_f
     return  (seq_ids,starts,stops)
 end
 
-
-#=
-
-  memory_read_and_parse_bedgraph
+"""
+  read_and_parse_bedgraph
 
   This function expects to have the first three columns to contain
   seq id,start position, and stop/end postion.
@@ -276,48 +274,10 @@ end
   2. start_positions
   3. stop_positions
   4. score
-
-=#
-
-function memory_read_and_parse_bedgraph(filename;gzip=false)
-    if gzip
-        lines=read_gzip_file(filename)
-    else
-        lines = memory_read_file(filename)
-    end
-    #io = open(filename)
-    #Lumberjack.info("reading all")
-    #file=readall(io)
-    #Lumberjack.info("finished reading all")
-    #Lumberjack.info("split line")
-    #lines=split(file,'\n')
-    #Lumberjack.info("done split")
-    # now we know what size thigns should be
-    # get size and two columns and then
-    # lines -1 as it splits the final row
-    num_lines=length(lines)-1
-    seq_ids = fill("",num_lines)
-    starts=fill( 0, num_lines)
-    stops=fill( 0,  num_lines )
-    scores=fill(float32(0.0), num_lines )
-    Lumberjack.info("parse and assign to array")
-    #parseint takes for ever, and that is what is so annoying about this.
-    for idx=1:num_lines
-        (seq_id,start,stop,score)= split(lines[idx],'\t')
-        seq_ids[idx] = seq_id
-        starts[idx]  = int64(start)
-        stops[idx]   = int64(stop)
-        scores[idx]  = float32(score)
-        if idx % 1000 == 0
-            println(idx)
-        end
-    end
-    Lumberjack.info("finished parsing and assigning to array")
-    return (seq_ids,starts,stops,scores)
-end
-
+"""
 function read_and_parse_bedgraph(filename;gzip=false)
     if gzip
+        # reset on end must be done for bgzip files
         stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
     else
         stream= open(filename)
