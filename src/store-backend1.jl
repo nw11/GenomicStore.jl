@@ -470,7 +470,7 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
     # initialise for the first sequence_id
     seq_id=seq_ids[1]
     seq_len  = chr_sizes_dict[seq_id]
-    seq_vals = fill(int8(0),seq_len)
+    seq_vals = fill(Int8(0),seq_len)
 
     # initialise structures for checking sorted data
     seen_seq_ids = Set()
@@ -502,7 +502,7 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
 
             # -- check we have sorted data by chr
             seq_len  = chr_sizes_dict[seq_id]
-            seq_vals = fill(int8(0),seq_len)
+            seq_vals = fill(Int8(0),seq_len)
             Lumberjack.info("Next track to be $seq_len in length")
         end
 
