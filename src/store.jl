@@ -149,7 +149,7 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
                                    genomic_store_path ,
                                    track_id ,
                                    chr_sizes_path,
-                                   strand_filter_char="-",
+                                   strand_filter_str="-",
                                    coord_shift= coord_shift)
         elseif file_type == "methpipe_bed_interval"
            store_methpipe_bed_intervals(filepath ,
