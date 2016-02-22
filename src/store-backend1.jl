@@ -35,15 +35,11 @@ function memory_read_file(filename)
     return lines
 end
 
-
-
 function isgzip(filepath)
     (path,ext) = splitext(filepath)
     gzip = (ext==".gz" || ext==".gzip" ) ? true : false
     return gzip
 end
-
-
 
 
 """
@@ -92,81 +88,25 @@ function read_and_parse_point_file(filename;gzip=false,strand_filter_str="-")
 end
 
 
-
-#=
- memory_read_and_parse_methpipe_cg_bed_coverage
+"""
+  read_and_parse_methpipe_cg_bed_file
 
  Reads into memory a file and parses a file in the format:
 
   chr1    3000826 +       CG      1       17
   chr1    3001006 +       CG      0.8     10
 
- extracting out the 6th column (the coverage column)
+ extracting out either the 5th or 6th column (the coverage column)
 
  returns tuple of 4 arrays
 
  1. seq_ids
  2, starts
  3. stops
- 4. coverages
-
-=#
-
-function memory_read_and_parse_methpipe_cg_bed_coverage(filename;gzip=false)
-    if gzip
-        lines=read_gzip_file(filename)
-    else
-        lines = memory_read_file(filename)
-    end
-    num_lines=length(lines)-1
-    seq_ids = fill("",num_lines)
-    starts=fill( 0, num_lines)
-    stops=fill( 0,  num_lines )
-    coverages=fill(int32(0), num_lines )
-    Lumberjack.info("parse and assign to array")
-    #parseint takes for ever, and that is what is so annoying about this.
-    for idx=1:num_lines
-        (seq_id,start,strand,context,score,coverage)= split(lines[idx],'\t')
-        try
-            seq_ids[idx] = seq_id
-            starts[idx]  = int64(start)
-            stops[idx]   = int64(start) +1
-            coverages[idx]  = int32(coverage)
-            if idx % 1000000 == 0
-                println(idx)
-            end
-       catch y
-          println("processing this line($idx):\n")
-          println(lines[idx])
-          println("parsed to:")
-          println("$seq_id $start $strand $context $score $coverage")
-          error(y)
-       end
-    end
-    Lumberjack.info("finished parsing integer and assigning to array")
-    return (seq_ids,starts,stops,coverages)
-end
-
+ 4. levels/coverage
 
 """
-  read_and_parse_methpipe_cg_bed_levels
-
- Reads into memory a file and parses a file in the format:
-
-  chr1    3000826 +       CG      1       17
-  chr1    3001006 +       CG      0.8     10
-
- extracting out the 6th column (the coverage column)
-
- returns tuple of 4 arrays
-
- 1. seq_ids
- 2, starts
- 3. stops
- 4. levels
-
-"""
-function read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
+function read_and_parse_methpipe_cg_bed_file(filename;gzip=false,value_column=5)
     if gzip
         # reset on end must be done for bgzip files
         stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
@@ -176,30 +116,36 @@ function read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
     seq_ids=UTF8String[]
     starts=Int64[]
     stops=Int64[]
-    scores=Float32[]
+    if  value_column == 5
+        scores=Float32[]
+        T=Float32
+    elseif value_column == 6
+        scores=Int32[]
+        T=Int32
+    else
+        Lumberjack.error("invalid column number (valid: 5 or 6)")
+    end
     count=0
     for line in eachline(stream)
-        (seq_id,start,strand,context,score,coverage) = split(line,'\t')
+        # This splits the line into the following:
+        #(seq_id,start,strand,context,score,coverage) = split(line,'\t')
+        split_line=split(line,'\t')
         count+=1
         if count % 1000000 == 0
            Lumberjack.info("Lines read: $count")
         end
-        start_int=parse(Int64,start)
+        push!(seq_ids,split_line[1])
+        start_int=parse(Int64,split_line[2])
         push!(starts,start_int)
         push!(stops,start_int+1)
-        push!(seq_ids,seq_id)
-        push!(scores,parse(Float32,score))
+        push!(scores,parse(T,split_line[value_column]))
     end
-
     Lumberjack.info("Finished parsing and assigning to array.\n
     Number of lines in file: $count\n
     First seq_id: $(seq_ids[1])\n
     Last seq_id: $(seq_ids[end])")
     return (seq_ids,starts,stops,scores)
 end
-
-
-
 
 
 #=
@@ -334,9 +280,9 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
     if bedtype == "bedgraph_cpg"
         (seq_ids,starts,stops,scores)=read_and_parse_bedgraph(input_file,gzip=gzip)
     elseif bedtype == "methpipe_cpg_bed_levels"
-        (seq_ids,starts,stops,scores)=read_and_parse_methpipe_cg_bed_levels(input_file,gzip=gzip)
+        (seq_ids,starts,stops,scores)=read_and_parse_methpipe_cg_bed_file(input_file,gzip=gzip,value_column=5)
     elseif bedtype == "methpipe_cpg_bed_coverage"
-        (seq_ids,starts,stops,scores)=memory_read_and_parse_methpipe_cg_bed_coverage(input_file,gzip=gzip)
+        (seq_ids,starts,stops,scores)=read_and_parse_methpipe_cg_bed_file(input_file,gzip=gzip,value_column=6)
     else
          Lumberjack.error("Invalid bedtype specified $bedtype")
     end
