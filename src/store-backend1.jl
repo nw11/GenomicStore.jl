@@ -279,9 +279,9 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
     #--- load
     if bedtype == "bedgraph_cpg"
         (seq_ids,starts,stops,scores)=read_and_parse_bedgraph(input_file,gzip=gzip)
-    elseif bedtype == "methpipe_cpg_bed_levels"
+    elseif bedtype == "methpipe_bed_levels"
         (seq_ids,starts,stops,scores)=read_and_parse_methpipe_cg_bed_file(input_file,gzip=gzip,value_column=5)
-    elseif bedtype == "methpipe_cpg_bed_coverage"
+    elseif bedtype == "methpipe_bed_coverage"
         (seq_ids,starts,stops,scores)=read_and_parse_methpipe_cg_bed_file(input_file,gzip=gzip,value_column=6)
     else
          Lumberjack.error("Invalid bedtype specified $bedtype")
@@ -394,7 +394,7 @@ function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes
     # initialise for the first sequence_id
     seq_id=seq_ids[1]
     seq_len  = chr_sizes_dict[seq_id]
-    seq_vals = fill(int8(0),seq_len)
+    seq_vals = fill(Int8(0),seq_len)
 
     # initialise structures for checking sorted data
     seen_seq_ids = Set()
@@ -426,7 +426,7 @@ function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes
 
             # -- check we have sorted data by chr
             seq_len  = chr_sizes_dict[seq_id]
-            seq_vals = fill(int8(0),seq_len)
+            seq_vals = fill(Int8(0),seq_len)
             Lumberjack.info("Next track to be $seq_len in length")
         end
 
@@ -561,12 +561,12 @@ function store_methpipe_bed_points(filepath::AbstractString,
 
     if measurement == "levels"
         val_type = "float32"
-        bedtype = "methpipe_cpg_bed_levels"
-        na_val=float32(na_val)
+        bedtype = "methpipe_bed_levels"
+        na_val=Float32(na_val)
     elseif measurement == "coverage"
         val_type = "int32"
-        bedtype = "methpipe_cpg_bed_coverage"
-        na_val=int32(na_val)
+        bedtype = "methpipe_bed_coverage"
+        na_val=Int32(na_val)
     end
 
     save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path,
@@ -623,7 +623,7 @@ function store_bedgraph_cpg( filepath::AbstractString,
 
     gzip = isgzip(filepath) ? true : false
     val_type = "float32"
-    na_val=float32(na_val)
+    na_val=Float32(na_val)
     save_bed_track(genomic_store_path,filepath,track_id,chr_sizes_path,
                    start_coord_shift=coord_shift, OUT_OF_RANGE_VAL=na_val,
                    gzip=gzip, val_type=val_type, bedtype="bedgraph_cpg" )
