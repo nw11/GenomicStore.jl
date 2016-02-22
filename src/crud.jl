@@ -52,7 +52,7 @@ Sets up filehandle and writes values to a genomic track
   * JldBackend
 """
 function write_track{T <: Number}(backend_store::JldStoreBackend,
-                                  track_id::String, seq_id::String,values::Vector{T} )
+                                  track_id::AbstractString, seq_id::AbstractString,values::Vector{T} )
     genomic_store_path = backend_store.path
     fid=nothing
     if !isfile(genomic_store_path)
@@ -66,7 +66,7 @@ function write_track{T <: Number}(backend_store::JldStoreBackend,
     close(fid)
 end
 
-function delete_track!(backend_store::JldStoreBackend,track_id::String, seq_id::String)
+function delete_track!(backend_store::JldStoreBackend,track_id::AbstractString, seq_id::AbstractString)
     genomic_store_path = backend_store.path
     fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
     Lumberjack.info("delete $seq_id")
@@ -76,7 +76,7 @@ function delete_track!(backend_store::JldStoreBackend,track_id::String, seq_id::
 end
 
 function read_track(backend_store::JldStoreBackend,
-                                 track_id::String,  seq_id::String,
+                                 track_id::AbstractString,  seq_id::AbstractString,
                                  start_pos::Integer, stop_pos::Integer)
     genomic_store_path = backend_store.path
     fid=nothing
@@ -99,8 +99,8 @@ function read_track(backend_store::JldStoreBackend,
 end
 
 function update_track!{T <: Number}(backend_store::JldStoreBackend,
-                                  track_id::String,  seq_id::String,
-                                  start_pos::String, stop_pos::String,
+                                  track_id::AbstractString,  seq_id::AbstractString,
+                                  start_pos::AbstractString, stop_pos::AbstractString,
                                   values::Vector{T})
     Lumberjack.info("Updating $seq_id")
     genomic_store_path = backend_store.path
@@ -116,7 +116,7 @@ end
 # catch errors here to allow logging of errors
 # with specific messages relevant to these functions
 
-function _write_track{T <: Number}(file_handle::JldFile, track_id::String, seq_id::String, values::Vector{T} )
+function _write_track{T <: Number}(file_handle::JldFile, track_id::AbstractString, seq_id::AbstractString, values::Vector{T} )
     try
         write(file_handle, bytestring("$seq_id/$track_id"), values)
     catch err
@@ -124,7 +124,7 @@ function _write_track{T <: Number}(file_handle::JldFile, track_id::String, seq_i
     end
 end
 
-function _delete_track!(file_handle::JldFile,track_id::String, seq_id::String)
+function _delete_track!(file_handle::JldFile,track_id::AbstractString, seq_id::AbstractString)
     try
         delete!(file_handle,bytestring("$seq_id/$track_id"))
     catch err
@@ -132,7 +132,7 @@ function _delete_track!(file_handle::JldFile,track_id::String, seq_id::String)
     end
 end
 
-function _update_track!{T <: Number}(file_handle::JldFile, track_id::String, seq_id::String,
+function _update_track!{T <: Number}(file_handle::JldFile, track_id::AbstractString, seq_id::AbstractString,
                                       start_pos::Integer,stop_pos::Integer,values::Vector{T} )
     dset = file_handle["$seq_id/$track_id"]
     if stop_pos - start_pos != length(values)
