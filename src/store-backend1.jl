@@ -147,9 +147,8 @@ function read_and_parse_methpipe_cg_bed_file(filename;gzip=false,value_column=5)
     return (seq_ids,starts,stops,scores)
 end
 
-
-#=
- memory_read_and_parse_interval_file
+"""
+memory_read_and_parse_interval_file
 
  This function expects a file to have the first three columns to contain
  a sequence id, start position, and stop/end position
@@ -164,48 +163,41 @@ end
  1. sequence_ids
  2. start_positions
  3. stop_positions
+"""
 
-=#
-function memory_read_and_parse_interval_file(filename; only_start=false,strand_filter_char=nothing)
-    io = open(filename)
-    Lumberjack.info("reading all")
-    file=readall(io)
-    Lumberjack.info("finished reading all")
-    Lumberjack.info("split line")
-    lines=split(file,'\n')
-    Lumberjack.info("done split")
-
-    num_lines=length(lines)-1 # lines -1 as it splits the final row
-    seq_ids = fill("",num_lines)
-
-    starts=fill( 0, num_lines)
-    if !only_start
-       stops=fill( 0,  num_lines )
+function  read_and_parse_interval_file(filename; gzip=false, only_start=false,strand_filter_char=nothing)
+    if gzip
+        # reset on end must be done for bgzip files
+        stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
+    else
+        stream= open(filename)
     end
-    Lumberjack.info("parse and assign to array")
-
-    for idx=1:num_lines
-        if only_start
-            (seq_id,start)= split(lines[idx],'\t')
-        else
-            (seq_id,start,stop)= split(lines[idx],'\t')
+    seq_ids=UTF8String[]
+    starts=Int64[]
+    stops=Int64[]
+    count=0
+    for line in eachline(stream)
+        # This splits the line into the following:
+        #(seq_id,start,stop,id,cpg_count,strand) = split(line,'\t')
+        split_line=split(line,'\t')
+        count+=1
+        if count % 1000000 == 0
+           Lumberjack.info("Lines read: $count")
         end
-        seq_ids[idx]=seq_id
-        starts[idx]=int64(start)
-        if !only_start
-            stops[idx]=int64(stop)
-        end
-
-        if idx % 1000000 == 0
-            println(idx)
-        end
+        push!(seq_ids,split_line[1])
+        push!(starts,parse(Int64,split_line[2]))
+        push!(stops, parse(Int64,split_line[3]))
     end
-    Lumberjack.info("finished parsing integer and assigning to array")
+    Lumberjack.info("Finished parsing and assigning to array.\n
+    Number of lines in file: $count\n
+    First seq_id: $(seq_ids[1])\n
+    Last seq_id: $(seq_ids[end])")
     if only_start
         return (seq_ids,starts)
     end
     return  (seq_ids,starts,stops)
 end
+
 
 """
   read_and_parse_bedgraph
@@ -453,7 +445,7 @@ end
 # this function just records the start position at the moment.
 # interval_label_type may be either "binary" uses 1 or 0 to indicate an interval covers a basepair
 # or multiclass_int8 which allows an 256 possible integer values (-128 .. 127)
-
+# this last option is not supported anymore.
  Current requirement that input file is pre-sorted
 =#
 function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes_path;
@@ -462,11 +454,12 @@ function save_interval_track(genomic_store_path,interval_file,track_id,chr_sizes
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
 
     if interval_label_type == "binary"
-        (seq_ids,starts,stops)=memory_read_and_parse_interval_file(interval_file, strand_filter_char=strand_filter_char)
+        (seq_ids,starts,stops)=read_and_parse_interval_file(interval_file, strand_filter_char=strand_filter_char)
     elseif interval_label_type == "multiclass_int8"
-        (seq_ids,starts,stops,scores)=memory_read_and_integer_parse_bedgraph(interval_file)
+        #(seq_ids,starts,stops,scores)=read_and_integer_parse_bedgraph(interval_file)
+       Lumberjack.error("multiclass_int8 file type not supported")
     else
-        Lumberjack.error("Interval Label Type not supported")
+        Lumberjack.error("Interval file type not supported")
     end
 
     bedgraph_file_length = length(seq_ids)
