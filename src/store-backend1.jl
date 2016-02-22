@@ -58,7 +58,7 @@ end
   1. sequence_ids
   2. start_positions
 """
-function read_and_parse_point_file(filename;gzip=false,strand_filter_char='-')
+function read_and_parse_point_file(filename;gzip=false,strand_filter_str="-")
     if gzip
         # reset on end must be done for bgzip files
         stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
@@ -76,7 +76,7 @@ function read_and_parse_point_file(filename;gzip=false,strand_filter_char='-')
         if count % 1000000 == 0
            Lumberjack.info("Lines read: $count")
         end
-        if strand[1] == strand_filter_char
+        if strand == strand_filter_str
             continue
         end
         pass_filter_count +=1
@@ -430,10 +430,10 @@ end
 
 =#
 
-function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes_path;start_coord_shift=0,strand_filter_char=nothing)
+function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes_path;start_coord_shift=0,strand_filter_str=nothing)
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
 
-    (seq_ids,starts)=read_and_parse_point_file(point_file, strand_filter_char=strand_filter_char)
+    (seq_ids,starts)=read_and_parse_point_file(point_file, strand_filter_str=strand_filter_str)
     bedgraph_file_length = length(seq_ids)
     Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
 
@@ -633,11 +633,12 @@ function store_cpg_points(filepath::String,
                                    genomic_store_path::String,
                                    track_id::String,
                                    chr_sizes_path::String;
-                                   strand_filter_char="-",
+                                   strand_filter_str="-",
                                    coord_shift=0)
 
   save_start_point_track(genomic_store_path, filepath,track_id, chr_sizes_path,
-                         start_coord_shift=coord_shift
+                         start_coord_shift=coord_shift,
+                         strand_filter_str=strand_filter_str
                          )
 
 end
