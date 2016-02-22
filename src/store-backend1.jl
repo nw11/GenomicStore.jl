@@ -44,46 +44,50 @@ function isgzip(filepath)
 end
 
 
-#=
- memory_read_and_parse_point_file
 
- Reads into memory a file and parses a file in the format:
 
-   chr1    3000826 +
-   chr1    3000827 -
+"""
+  read_and_parse_point_file
+  This function expects to have the first three columns to contain
+  seq id,start position, and strand.
+  e.g.
+  chr1    3000826 +
+  chr1    3000827 -
 
- returns tuple of 2 arrays
- 1. seq_ids
- 2. start positions
-=#
-function memory_read_and_parse_point_file(filename;strand_filter_char=nothing)
-    io = open(filename)
-    Lumberjack.info("reading all")
-    file=readall(io)
-    Lumberjack.info("finished reading all")
-    Lumberjack.info("split line")
-    lines=split(file,'\n')
-    Lumberjack.info("done split")
-
-    num_lines=length(lines)-1
-    seq_ids = ASCIIString[] #fill("",num_lines)
-    starts=   Int64[] #fill( 0, num_lines)
-    num_kept = 0
-    Lumberjack.info("parse and assign to array")
-    #parseint takes for ever, so annoying about this.
-    for idx=1:num_lines
-        (seq_id,start,strand)= split(strip(lines[idx]),'\t')
-        if strand == strand_filter_char
+  Returns a tuple of vectors
+  1. sequence_ids
+  2. start_positions
+"""
+function read_and_parse_point_file(filename;gzip=false,strand_filter_char='-')
+    if gzip
+        # reset on end must be done for bgzip files
+        stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
+    else
+        stream= open(filename)
+    end
+    seq_ids=UTF8String[]
+    starts=Int64[]
+    count=0
+    pass_filter_count=-0
+    for line in eachline(stream)
+        (seq_id,start,strand)=split(line,'\t')
+        strand=chomp(strand)
+        count+=1
+        if count % 1000000 == 0
+           Lumberjack.info("Lines read: $count")
+        end
+        if strand[1] == strand_filter_char
             continue
         end
+        pass_filter_count +=1
+        push!(starts,parse(Int64,start) )
         push!(seq_ids,seq_id)
-        push!(starts,int64(start))
-        if idx % 1000000 == 0
-            println(idx)
-        end
-        num_kept+=1
     end
-    Lumberjack.info("finished parsing integer and assigning to array ( number kept after filter if applied $num_kept). first seq_id is $(seq_ids[1]). Last seq_id $(seq_ids[end])")
+    Lumberjack.info("Finished parsing and assigning to array.\n
+    Number of lines in file: $count\n
+    Number of lines passing filter: $pass_filter_count\n
+    First seq_id: $(seq_ids[1])\n
+    Last seq_id: $(seq_ids[end])")
     return (seq_ids,starts)
 end
 
@@ -429,7 +433,7 @@ end
 function save_start_point_track(genomic_store_path,point_file,track_id,chr_sizes_path;start_coord_shift=0,strand_filter_char=nothing)
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
 
-    (seq_ids,starts)=memory_read_and_parse_point_file(point_file, strand_filter_char=strand_filter_char)
+    (seq_ids,starts)=read_and_parse_point_file(point_file, strand_filter_char=strand_filter_char)
     bedgraph_file_length = length(seq_ids)
     Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
 
