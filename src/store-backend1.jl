@@ -148,8 +148,8 @@ function memory_read_and_parse_methpipe_cg_bed_coverage(filename;gzip=false)
 end
 
 
-#=
- memory_read_and_parse_methpipe_cg_bed_levels
+"""
+  read_and_parse_methpipe_cg_bed_levels
 
  Reads into memory a file and parses a file in the format:
 
@@ -165,34 +165,40 @@ end
  3. stops
  4. levels
 
-=#
-
-function memory_read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
+"""
+function read_and_parse_methpipe_cg_bed_levels(filename;gzip=false)
     if gzip
-        lines=read_gzip_file(filename)
+        # reset on end must be done for bgzip files
+        stream=ZlibInflateInputStream(open(filename),reset_on_end=true)
     else
-        lines = memory_read_file(filename)
+        stream= open(filename)
     end
-    num_lines=length(lines)-1
-    seq_ids = fill("",num_lines)
-    starts=fill( 0, num_lines)
-    stops=fill( 0,  num_lines )
-    scores=fill(float32(0.0), num_lines )
-    Lumberjack.info("parse and assign to array")
-
-    for idx=1:num_lines
-        (seq_id,start,strand,context,score,coverage)= split(lines[idx],'\t')
-        seq_ids[idx] = seq_id
-        starts[idx]  = int64(start)
-        stops[idx]   = int64(start) +1
-        scores[idx]  = float32(score)
-        if idx % 1000000 == 0
-            println(idx)
+    seq_ids=UTF8String[]
+    starts=Int64[]
+    stops=Int64[]
+    scores=Float32[]
+    count=0
+    for line in eachline(stream)
+        (seq_id,start,strand,context,score,coverage) = split(line,'\t')
+        count+=1
+        if count % 1000000 == 0
+           Lumberjack.info("Lines read: $count")
         end
+        start_int=parse(Int64,start)
+        push!(starts,start_int)
+        push!(stops,start_int+1)
+        push!(seq_ids,seq_id)
+        push!(scores,parse(Float32,score))
     end
-    Lumberjack.info("finished parsing integer and assigning to array")
+
+    Lumberjack.info("Finished parsing and assigning to array.\n
+    Number of lines in file: $count\n
+    First seq_id: $(seq_ids[1])\n
+    Last seq_id: $(seq_ids[end])")
     return (seq_ids,starts,stops,scores)
 end
+
+
 
 
 
@@ -328,7 +334,7 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
     if bedtype == "bedgraph_cpg"
         (seq_ids,starts,stops,scores)=read_and_parse_bedgraph(input_file,gzip=gzip)
     elseif bedtype == "methpipe_cpg_bed_levels"
-        (seq_ids,starts,stops,scores)=memory_read_and_parse_methpipe_cg_bed_levels(input_file,gzip=gzip)
+        (seq_ids,starts,stops,scores)=read_and_parse_methpipe_cg_bed_levels(input_file,gzip=gzip)
     elseif bedtype == "methpipe_cpg_bed_coverage"
         (seq_ids,starts,stops,scores)=memory_read_and_parse_methpipe_cg_bed_coverage(input_file,gzip=gzip)
     else
