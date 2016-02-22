@@ -597,10 +597,10 @@ end
    exported method
 =#
 
-function store_methpipe_bed_points(filepath::String,
-                                   genomic_store_path::String,
-                                   track_id::String,
-                                   chr_sizes_path::String;
+function store_methpipe_bed_points(filepath::AbstractString,
+                                   genomic_store_path::AbstractString,
+                                   track_id::AbstractString,
+                                   chr_sizes_path::AbstractString;
                                    na_val=0,
                                    coord_shift=0,
                                    measurement="levels")
@@ -629,10 +629,10 @@ end
  store_cpg_points
   default is to filter out lines on negative strand
 =#
-function store_cpg_points(filepath::String,
-                                   genomic_store_path::String,
-                                   track_id::String,
-                                   chr_sizes_path::String;
+function store_cpg_points(filepath::AbstractString,
+                                   genomic_store_path::AbstractString,
+                                   track_id::AbstractString,
+                                   chr_sizes_path::AbstractString;
                                    strand_filter_str="-",
                                    coord_shift=0)
 
@@ -646,10 +646,10 @@ end
 #=
  store_methpipe_bed_intervals
 =#
-function store_methpipe_bed_intervals(filepath::String,
-                                   genomic_store_path::String,
-                                   track_id::String,
-                                   chr_sizes_path::String;
+function store_methpipe_bed_intervals(filepath::AbstractString,
+                                   genomic_store_path::AbstractString,
+                                   track_id::AbstractString,
+                                   chr_sizes_path::AbstractString;
                                    coord_shift=0)
 
    save_interval_track(genomic_store_path,filepath,track_id,chr_sizes_path,
@@ -661,10 +661,10 @@ end
  store_bedgraph
 =#
 
-function store_bedgraph_cpg( filepath::String,
-                         genomic_store_path::String,
-                         track_id::String,
-                         chr_sizes_path::String;
+function store_bedgraph_cpg( filepath::AbstractString,
+                         genomic_store_path::AbstractString,
+                         track_id::AbstractString,
+                         chr_sizes_path::AbstractString;
                          na_val=0,
                          coord_shift=0,
                          measurement="levels")
