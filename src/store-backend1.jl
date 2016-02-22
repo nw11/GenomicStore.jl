@@ -399,7 +399,7 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
 
         if val_type == "float32"
             try
-                seq_vals[ starts[i] + start_coord_shift ] = float32( scores[i] )
+                seq_vals[ starts[i] + start_coord_shift ] = Float32( scores[i] )
             catch y
                 println("processing this line:\n")
                 curr_row = join([ seq_ids[i], starts[i],stops[i], scores[i] ],"\t" )
@@ -409,13 +409,13 @@ function save_bed_track(genomic_store_path,input_file,track_id,chr_sizes_path;
             end
         end
         if val_type == "int32"
-            seq_vals[ starts[i] + start_coord_shift ] = int32( scores[i] )
+            seq_vals[ starts[i] + start_coord_shift ] = Int32( scores[i] )
         end
         if val_type == "int16"
-            seq_vals[ starts[i] + start_coord_shift ] = int16( scores[i] )
+            seq_vals[ starts[i] + start_coord_shift ] = Int16( scores[i] )
         end
         if val_type == "int8"
-            seq_vals[ starts[i] + start_coord_shift ] = int8( scores[i] )
+            seq_vals[ starts[i] + start_coord_shift ] = Int8( scores[i] )
         end
     end
     # write the final track
