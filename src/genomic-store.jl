@@ -4,7 +4,7 @@ using Lumberjack
 
 import HDF5.dump
 
-function dump(io::IO, x::Union(HDF5File, HDF5Group), n::Int, indent, display_num=10)
+function dump(io::IO, x::Union{HDF5File, HDF5Group}, n::Int, indent, display_num=10)
     println(typeof(x), " len ", length(x))
     if n > 0
         i = 1
