@@ -17,14 +17,14 @@ abstract StoreBackend
 # We want to try different forms of hdf5 e.g. compressed and mmapped, these can't be mixed
 
 type JldStoreBackend <: StoreBackend
-    path::String
-    description::String
+    path::AbstractString
+    description::AbstractString
     compressed::Bool
     mmapped::Bool
 end
 
 # hdf5-blosc, hdf5-gzip hdf5-mmap, hdf5-uncompressed (uncompressed)
-function getdb(dbpath::String; dbtype = "hdf5", description="" )
+function getdb(dbpath::AbstractString; dbtype = "hdf5", description="" )
     # check for suffix
     if dbtype == "hdf5" # default with compression
         return JldStoreBackend(dbpath,description,true,false)
