@@ -126,7 +126,7 @@ function store_samples( genomic_store_path, sample_info_path, chr_sizes_path )
             file_path = abspath(filepath)
         end
 
-        if track_exists(genomic_store_path)
+        if track_exists(genomic_store_path,track_id)
             Lumberjack.info("==Found track $track_id in database: skip==")
             continue
         end
