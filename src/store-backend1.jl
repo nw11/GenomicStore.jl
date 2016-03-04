@@ -8,6 +8,9 @@ using HDF5,JLD
 include( Pkg.dir("GenomicStore","src","crud.jl") )
 include( Pkg.dir("GenomicStore","src","util.jl") )
 
+
+
+
 function read_gzip_file(filename)
    gzio=gzopen(filename,"r")
    line_num =0
@@ -242,6 +245,14 @@ function read_and_parse_bedgraph(filename;gzip=false)
     Lumberjack.info("finished parsing and assigning to array")
     return (seq_ids,starts,stops,scores)
 end
+
+
+
+function track_exists(genomic_store_path, track_id)
+   db=getdb(genomic_store_path)
+   return _istrack(db,track_id)
+end
+
 
 #=
 
