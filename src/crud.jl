@@ -126,7 +126,7 @@ function _istrack(backend_store::JldStoreBackend,track_id::AbstractString)
         Lumberjack.error("$e\n Trying to open $genomic_store_path")
     end
     for n in names(fid)
-        if has(fid.plain,"$n/$track_id")
+        if has(fid,"$n/$track_id")
             close(fid)
             return true
         end
