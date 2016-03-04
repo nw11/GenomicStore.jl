@@ -47,12 +47,14 @@ Sets up filehandle and writes values to a genomic track
    * `seq_id::String`: identifying name of genomic sequence
    * `track_id::String`: identifying name of track
    * `values::Number`
+   * `overwrite::Boolean` : keyword argument indicating whether to overwrite the track
 
 # Return
   * JldBackend
 """
 function write_track{T <: Number}(backend_store::JldStoreBackend,
-                                  track_id::AbstractString, seq_id::AbstractString,values::Vector{T} )
+                                  track_id::AbstractString, seq_id::AbstractString,
+                                  values::Vector{T}; overwrite=false )
     genomic_store_path = backend_store.path
     fid=nothing
     if !isfile(genomic_store_path)
@@ -61,8 +63,12 @@ function write_track{T <: Number}(backend_store::JldStoreBackend,
         fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
     end
     Lumberjack.info("Writing $seq_id")
-    _write_track(fid, track_id, seq_id,values)
-    Lumberjack.info("Finished writing $seq_id")
+    if !has(fid,"$seq_id/$track_id") & !overwrite
+        _write_track(fid, track_id, seq_id,values)
+        Lumberjack.info("Finished writing $seq_id")
+    else
+        Lumberjack.info("Track: $seq_id/$track_id exists ... skipping")
+    end
     close(fid)
 end
 
@@ -109,6 +115,7 @@ function update_track!{T <: Number}(backend_store::JldStoreBackend,
     Lumberjack.info("Finished updating $seq_id")
     close(fid)
 end
+
 
 
 # backend store - hdf5
