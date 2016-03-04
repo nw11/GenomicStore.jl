@@ -63,7 +63,7 @@ function write_track{T <: Number}(backend_store::JldStoreBackend,
         fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
     end
     Lumberjack.info("Writing $seq_id")
-    if !has(fid,"$seq_id/$track_id") & !overwrite
+    if !has(fid.plain,"$seq_id/$track_id") & !overwrite
         _write_track(fid, track_id, seq_id,values)
         Lumberjack.info("Finished writing $seq_id")
     else
