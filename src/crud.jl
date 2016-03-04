@@ -62,8 +62,9 @@ function write_track{T <: Number}(backend_store::JldStoreBackend,
     else
         fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
     end
-    Lumberjack.info("Writing $seq_id")
+
     if !has(fid.plain,"$seq_id/$track_id") & !overwrite
+        Lumberjack.info("Writing $seq_id")
         _write_track(fid, track_id, seq_id,values)
         Lumberjack.info("Finished writing $seq_id")
     else
@@ -116,6 +117,22 @@ function update_track!{T <: Number}(backend_store::JldStoreBackend,
     close(fid)
 end
 
+function _istrack(backend_store::JldStoreBackend,track_id::AbstractString)
+    genomic_store_path = backend_store.path
+    fid=nothing
+    try
+        fid=h5open(genomic_store_path,"r")
+    catch e
+        Lumberjack.error("$e\n Trying to open $genomic_store_path")
+    end
+    for n in names(fid)
+        if has(fid.plain,"$n/$track_id")
+            close(fid)
+            return true
+        end
+    end
+    close(fid)
+end
 
 
 # backend store - hdf5
@@ -151,6 +168,8 @@ function _update_track!{T <: Number}(file_handle::JldFile, track_id::AbstractStr
         Lumberjack.error("Problem updating track: $err")
     end
 end
+
+
 
 function _list_tracks()
 
