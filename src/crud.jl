@@ -132,6 +132,7 @@ function _istrack(backend_store::JldStoreBackend,track_id::AbstractString)
         end
     end
     close(fid)
+    return false
 end
 
 
