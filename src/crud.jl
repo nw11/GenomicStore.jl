@@ -116,11 +116,7 @@ function read_track(backend_store::JldStoreBackend,
         Lumberjack.error("$e\n Trying to open $genomic_store_path")
     end
     if has(fid,"$seq_id/$track_id")
-        if start_pos == 0 && stop_pos == 0
-            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"))
-        else
-            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"),positions)
-        end
+        track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"),positions)
         close(fid)
         return track_slice
     end
