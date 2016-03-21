@@ -107,7 +107,7 @@ end
 
 function read_track(backend_store::JldStoreBackend,
                                  track_id::AbstractString,  seq_id::AbstractString,
-                                 positions::Array{Integer} )
+                                 positions::Vector{Integer} )
     genomic_store_path = backend_store.path
     fid=nothing
     try
