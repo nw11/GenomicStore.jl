@@ -105,6 +105,30 @@ function read_track(backend_store::JldStoreBackend,
     return []
 end
 
+function read_track(backend_store::JldStoreBackend,
+                                 track_id::AbstractString,  seq_id::AbstractString,
+                                 positions::Array{Integer} )
+    genomic_store_path = backend_store.path
+    fid=nothing
+    try
+        fid=h5open(genomic_store_path,"r")
+    catch e
+        Lumberjack.error("$e\n Trying to open $genomic_store_path")
+    end
+    if has(fid,"$seq_id/$track_id")
+        if start_pos == 0 && stop_pos == 0
+            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"))
+        else
+            track_slice=h5read(genomic_store_path,bytestring("$seq_id/$track_id"),positions)
+        end
+        close(fid)
+        return track_slice
+    end
+    close(fid)
+    return []
+end
+
+
 function update_track!{T <: Number}(backend_store::JldStoreBackend,
                                   track_id::AbstractString,  seq_id::AbstractString,
                                   start_pos::AbstractString, stop_pos::AbstractString,
