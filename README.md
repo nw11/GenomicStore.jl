@@ -26,23 +26,24 @@ query_track(genomic_store,"chip-seq-track1","chr1", 1000000, 3000000)
 Intended basic API:
 
 Create:
+
 save_track(genomic_store,filetype; kwargs... )
 
 Retrieval:
-query_track(genomic_store,track_id,seq_id,start_pos,end_pos)
-query_track(genomic_store,track_ids,seq_ids::Array,starts_pos::Array,ends_pos::Array)
+
+- query_track(genomic_store,track_id,seq_id,start_pos,end_pos)
+- query_track(genomic_store,track_ids,seq_ids::Array,starts_pos::Array,ends_pos::Array)
 
 Update:
-save_track(genomic_store,track_id,seq_id,start_pos,end_pos,values)
+- save_track(genomic_store,track_id,seq_id,start_pos,end_pos,values)
  
 (values must be of the same type of the type of track)
 
 Delete:
-remove_track(genomic_store,track_id)
-remove_seq(genomic_store,track_id,seq_id)
+- remove_track(genomic_store,track_id)
+- remove_seq(genomic_store,track_id,seq_id)
 
 
 A JldGenomicStore can be bulk loaded by describing all the files to be loaded as tracks in a separate file. 
 
 More documentation coming. 
-
