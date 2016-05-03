@@ -22,14 +22,12 @@ query_track(genomic_store,"chip-seq-track1","chr1", 1000000, 3000000)
 ```
 
 
-Intended basic API:
+## Intended basic API:
 
 Create:
-
 - save_track(genomic_store,filetype; kwargs... )
 
 Retrieval:
-
 - query_track(genomic_store,track_id,seq_id,start_pos,end_pos)
 - query_track(genomic_store,track_ids,seq_ids::Array,starts_pos::Array,ends_pos::Array)
 
@@ -43,6 +41,10 @@ Delete:
 - remove_seq(genomic_store,track_id,seq_id)
 
 
+## JLD GenomicStore
 A JldGenomicStore can be bulk loaded by describing all the files to be loaded as tracks in a separate file. 
+More details on this coming.
 
+## Status
+This branch is currently under significant development so this is pre-alpha at the moment.
 More documentation coming. 
