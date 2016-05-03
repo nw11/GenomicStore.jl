@@ -1,5 +1,4 @@
 # GenomicStore
-[![Build Status](https://travis-ci.org/nw11/GenomicStore.jl.svg?branch=master)](https://travis-ci.org/nw11/GenomicStore.jl)
 
 GenomicStore is a Julia package for querying and storing genome annotation. These are typically organised as "tracks" that represent values associated with coordinates on a reference genome.
 
