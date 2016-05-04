@@ -136,6 +136,42 @@ function _istrack(backend_store::JldStoreBackend,track_id::AbstractString)
     return false
 end
 
+"""
+  _hastrack( backend_store::JldStoreBackend,track_id::AbstractString )
+
+  A track is a set of intervals or points associated with a sequence.
+  So we look through all sequence names for evidence that a track exists.
+  Should replace _istrack() _istrack will be deprecated in favour of this
+  method.
+"""
+
+function _hastrack( backend_store::JldStoreBackend,track_id::AbstractString  )
+    # _hastrack
+    _istrack(backend_store,track_id)
+end
+
+"""
+   _hasseqtrack(  backend_store::JldStoreBackend,track_id::AbstractString, seq_id::AbstractString )
+   A track is a set of intervals or points associated with a sequence.
+   This checks the existance of a seq_id/track_id path.
+"""
+
+function _hasseqtrack(  backend_store::JldStoreBackend,track_id::AbstractString, seq_id::AbstractString )
+    genomic_store_path = backend_store.path
+    fid=nothing
+    try
+         fid=h5open(genomic_store_path,"r")
+    catch e
+        Lumberjack.error("$e\n Trying to open $genomic_store_path")
+    end
+    if has(fid,"$seq_id/$track_id")
+       close(fid)
+       return true
+    end
+    return false   
+end
+
+
 
 # backend store - hdf5
 # call these _write_track_hdf5  (crud-hdf5.jl?)
