@@ -168,6 +168,7 @@ function _hasseqtrack(  backend_store::JldStoreBackend,track_id::AbstractString,
        close(fid)
        return true
     end
+    close(fid)
     return false   
 end
 
