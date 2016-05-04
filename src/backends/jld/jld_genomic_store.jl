@@ -13,9 +13,14 @@ include( Pkg.dir("GenomicStore","src","readfile.jl"))
 
 """
     save_track(file,genomic_store,file::BedGraphMetadata)
+    
+    save_track() for bedGraph format
+
+    defaults:
+        start_coord_shift=1 (bedgraph is zero based, and GenomicStore uses 1 based)
 """
 function save_track(genomic_store::JldGenomicStore,file::BedGraphMetadata, track_id,chr_sizes_path;
-                             start_coord_shift=0,
+                             start_coord_shift=1,
                              OUT_OF_RANGE_VAL=0.0,
                              gzip=false,
                              val_type="float32",)
@@ -23,10 +28,10 @@ function save_track(genomic_store::JldGenomicStore,file::BedGraphMetadata, track
    (seq_ids,starts,stops,scores) = read_file(file)
    bedgraph_file_length = length(seq_ids)
    Lumberjack.info("Read bedgraph file, total length: $bedgraph_file_length")
-   _save_track(track_id,seq_ids,starts,stops,scores, chr_sizes_path, out_of_range_val=0.0,gzip,val_type=val_type)
+   _save_track(track_id,seq_ids,starts,stops,scores, chr_sizes_path,start_coord_shift=start_coord_shift, out_of_range_val=0.0,gzip,val_type=val_type)
 end
 
-function  _save_track(track_id,seq_ids,starts,stops,scores, chr_sizes_path; out_of_range_val=0.0,gzip=false,val_type=val_type)
+function  _save_track(track_id,seq_ids,starts,stops,scores, chr_sizes_path;start_coord_shift=0, out_of_range_val=0.0,gzip=false,val_type=val_type)
 
     chr_sizes_dict=get_chr_sizes_dict(chr_sizes_path)
     db=getdb(genomic_store_path) # from crud.jl
