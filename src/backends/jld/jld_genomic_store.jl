@@ -16,6 +16,12 @@ include( Pkg.dir("GenomicStore","src","readfile.jl"))
     
     save_track() for bedGraph format
 
+    This stores the value in the interval at the start position.
+    It assumes that the start positions of the intervals do not overlap, since bedGraph 
+    is often used directly as a display format, this assumption is implied. 
+   
+    The bedGraph files should be sorted.
+
     defaults:
         start_coord_shift=1 (bedgraph is zero based, and GenomicStore uses 1 based)
 """
