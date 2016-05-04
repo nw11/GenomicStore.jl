@@ -11,6 +11,10 @@ abstract PointFileMetadata
 
  Metadata associated with a Methpipe version of a "BED" file,
  which looks like this: 
+ 
+ CHECK - is this methpipe or bismark - it's Bismark I think because
+ it is for CG lvels.
+ 
   chr1    3000826 +       CG      1       17
   chr1    3001006 +       CG      0.8     10
 """
