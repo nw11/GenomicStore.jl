@@ -140,7 +140,7 @@ function update_track!{T <: Number}(genomic_store::JldGenomicStore,
     close(fid)
 end
 
-function _istrack(backend_store::JldGenomicStore,track_id::AbstractString)
+function _hastrack(genomic_store::JldGenomicStore,track_id::AbstractString)
     genomic_store_path = genomic_store.path
     fid=nothing
     try
