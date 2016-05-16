@@ -62,9 +62,9 @@ function write_track{T <: Number}(genomic_store::JldGenomicStore,
     genomic_store_path = genomic_store.path
     fid=nothing
     if !isfile(genomic_store_path)
-        fid=jldopen(genomic_store_path,"w",compress=backend_store.compressed)
+        fid=jldopen(genomic_store_path,"w",compress=genomic_store.compressed)
     else
-        fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
+        fid=jldopen(genomic_store_path,"r+",compress=genomic_store.compressed)
     end
 
     if !has(fid.plain,"$seq_id/$track_id") & !overwrite
@@ -81,7 +81,7 @@ end
 
 function delete_track!(genomic_store::JldGenomicStore,track_id::AbstractString, seq_id::AbstractString)
     genomic_store_path = genomic_store.path
-    fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
+    fid=jldopen(genomic_store_path,"r+",compress=genomic_store.compressed)
     Lumberjack.info("delete $seq_id")
     _delete_track!(fid, track_id, seq_id)
     Lumberjack.info("Finished removing $seq_id")
@@ -134,7 +134,7 @@ function update_track!{T <: Number}(genomic_store::JldGenomicStore,
                                   values::Vector{T})
     Lumberjack.info("Updating $seq_id")
     genomic_store_path = genomic_store.path
-    fid=jldopen(genomic_store_path,"r+",compress=backend_store.compressed)
+    fid=jldopen(genomic_store_path,"r+",compress=genomic_store.compressed)
     _udpate_track!(fid,track_id , seq_id , start_pos,stop_pos,values)
     Lumberjack.info("Finished updating $seq_id")
     close(fid)
