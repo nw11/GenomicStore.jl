@@ -1,6 +1,6 @@
-#= 
+#=
   jld_genomic_store.jl
-  
+
   This module implements the user level query interface.
 
  =#
@@ -13,13 +13,13 @@ include( Pkg.dir("GenomicStore","src","readfile.jl"))
 
 """
     save_track(file,genomic_store,file::BedGraphMetadata)
-    
+
     save_track() for bedGraph format
 
     This stores the value in the interval at the start position.
-    It assumes that the start positions of the intervals do not overlap, since bedGraph 
-    is often used directly as a display format, this assumption is implied. 
-   
+    It assumes that the start positions of the intervals do not overlap, since bedGraph
+    is often used directly as a display format, this assumption is implied.
+
     The bedGraph files should be sorted.
 
     defaults:
@@ -124,6 +124,6 @@ end
 
 function track_exists(genomic_store::JldGenomicStore, track_id)
    db=getdb(genomic_store.path)
-   return _istrack(db,track_id)
+   return _hastrack(db,track_id)
 end
 
