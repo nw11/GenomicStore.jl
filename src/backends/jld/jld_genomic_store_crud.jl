@@ -187,7 +187,27 @@ function _update_track!{T <: Number}(file_handle::JldFile, track_id::AbstractStr
     end
 end
 
-function _list_tracks()
-   # to be implemented
+"""
+"""
+# DOING.... put these into a dictionary and return
+# remove the _creater key which is jld specific
+function _list_tracks(genomic_store::JldGenomicStore)
+   genomic_store_path = genomic_store.path
+    fid=nothing
+    try
+        fid=h5open(genomic_store_path,"r")
+    catch e
+        Lumberjack.error("$e\n Trying to open $genomic_store_path")
+    end
+    for n in names(fid)
+        println(n)
+        # o_open means "object open" and is a convenience method defined in HDF5.jl
+        # I think the terminology is "dataset has objects"
+        object = o_open(fid, n)
+        for m in names(object)
+            println(m)
+        end
+    end
+   close(fid)
 end
 
