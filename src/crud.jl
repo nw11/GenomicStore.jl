@@ -169,7 +169,7 @@ function _hasseqtrack(  backend_store::JldStoreBackend,track_id::AbstractString,
        return true
     end
     close(fid)
-    return false   
+    return false
 end
 
 
@@ -208,11 +208,45 @@ function _update_track!{T <: Number}(file_handle::JldFile, track_id::AbstractStr
     end
 end
 
+"""
+    _list_tracks
+
+    Data organised as:
+
+    "chr1"
+     -> TRACKID1
+     -> TRACKID2
+
+    "chr2"
+      -> TRACKID1
+      -> TRACKID2
+
+     Check whether a track_id exists under a sequence id.
 
 
-function _list_tracks()
-
+"""
+function _list_sequence_ids(backend_store::JldStoreBackend,track_id::AbstractString)
+    genomic_store_path = backend_store.path
+    fid=nothing
+    try
+        fid=h5open(genomic_store_path,"r")
+    catch e
+        Lumberjack.error("$e\n Trying to open $genomic_store_path")
+    end
+    seq_ids=[]
+    for n in names(fid)
+        if has(fid,"$n/$track_id")
+            push!(seq_ids,n)
+        end
+    end
+   close(fid)
+   return seq_ids
 end
+
+
+function _list_tracks(backend_store::JldStoreBackend)
+end
+
 
 # a search function - e.g. indices or values  > than some value or matching a value .. prob not at this level - better done somewhere else
 # specialise could be a missing value thing
